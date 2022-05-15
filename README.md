@@ -55,7 +55,7 @@ in the future I will fix it
 ## Build <a name="build"></a> 
 
 ~~~ 
-git clone https://... 
+git clone https://github.com/krisszzzz/Hash-table
 ~~~
 
 After to that go to the git directory.  
