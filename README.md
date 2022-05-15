@@ -757,4 +757,4 @@ The testing function is *unit_test_search()*. (See [About testing](#about_test))
 So the searching became 2 times faster. It also good result.
 
 ### Conclusion <a name="opt_results"></a>
-Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2-3 times, however, in some cases, the increase is absolutely not significant.
+Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2.5 times, however, in some cases, the increase is absolutely not significant.
