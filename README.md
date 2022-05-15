@@ -655,6 +655,7 @@ You can also take a look at the word distribution graphs for crc32. It is also l
 #### AVX2 searching optimizations <a name="AVX2"></a>
 
 It makes sense to change the comparison and search for elements. For this we will use AVX2 instructions. Also I used some gcc attributes (*\_\_attribute__()* like *hot*, *nonull*, see [gcc functions attributes](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html)).
+As before, I used Lords of The Rings text.
 
 So I have optimized the searching function. This is how unoptimized version look:
 <details>
