@@ -744,11 +744,11 @@ This is AVX2 version of searching:
 
 The testing function is *unit_test_search()*. (See [About testing](#about_test))
 
-*No optimizitions, MurmurHash(), 10000000 iterations:*
+*No optimizitions, MurmurHash(), 10000000 iterations of searching:*
 	
 ![No_opt](pictures/searching_time_no_opt.png)
 
-*Optimized, MurmurHash(), 10000000 iterations:*
+*Optimized, MurmurHash(), 10000000 iterations of searching:*
 	
 ![Opt](pictures/seacrh_optimized_time.png)
 
