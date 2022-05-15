@@ -750,9 +750,11 @@ The testing function is *unit_test_search()*. (See [About testing](#about_test))
 
 The results:
 *No optimizitions, MurmurHash(), 10000000 iterations:*
+	
 ![No_opt](pictures/searching_time_no_opt.png)
 
 *Optimized, MurmurHash(), 10000000 iterations:*
+	
 ![Opt](pictures/seacrh_optimized_time.png)
 
 
