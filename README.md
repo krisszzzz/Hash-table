@@ -96,12 +96,6 @@ After that use gcc (or any compiler) to link static library:
 gcc your_source_files /path/to/lib/libhash_table.a
 ~~~
 
-## Usage and documentation <a name="source"></a>
-My hash table contains the following functions:
-~~~c
-
-~~~
-
 ## Hash functions collisions test <a name="hash_funct"></a>
 
 ### About hash functions <a name="about_hash_funct"></a>
