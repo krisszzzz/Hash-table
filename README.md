@@ -644,6 +644,7 @@ See *fast_hash()* below:
 
 
 *fast_hash with 1000000 iterations count in unit_test_hash_function. Used text The Lord of the Rings*
+	
 ![fast_hash](pictures/fast_hash_time.png)
 
 As you can see, the hash function has become about 10.5 times faster. Pretty good.
