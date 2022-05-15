@@ -661,10 +661,90 @@ You can also take a look at the word distribution graphs for crc32. It is also l
 It makes sense to change the comparison and search for elements. For this we will use AVX2 instructions. Also I used some gcc attributes (*\_\_attribute__()* like *hot*, *nonull*, see [gcc functions attributes](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html)).
 
 So I have optimized the searching function. This is how unoptimized version look:
-![Unoptimized](pictures/Unoptimized_search.png)
+<details>
+	<summary>hash_table_search()</summary>
+
+~~~c
+int hash_table_search(hash_table* const self,        const char* const element,
+                      const size_t      elem_size,   int*              in_table_pos,
+                      int*              in_stack_pos)
+{
+        if (self == nullptr) {
+                PrettyPrint("Unexpected nullptr self (hash_table* const)\n");
+                return NULLPTR_ERROR;
+        }
+
+        if (element == nullptr) {
+                PrettyPrint("Unexpected nullptr element (const char* const)\n");
+                return NULLPTR_ERROR;
+        }
+
+        hash_t elem_index                 = self->hash_function(element, elem_size) % self->size;
+        stack_node* current_stack_elem = self->data[elem_index].elements;
+        
+        for (int iter_count = 0; iter_count < self->data[elem_index].size; ++iter_count) {
+                if (strncmp(current_stack_elem[iter_count].data, element, elem_size) == 0 && !current_stack_elem[iter_count].data[elem_size]) {
+                        if (in_table_pos && in_stack_pos) {
+                                *in_table_pos = elem_index;
+                                *in_stack_pos = iter_count;
+                        }
+                        
+                        return 1;
+                } 
+        }
+              
+        return 0; 
+}
+
+
+~~~
+</details>
+</br>
+
 
 This is AVX2 version of searching:
-![Optimized](pictures/Optimized_search.png)
+<details>
+	<summary>hash_table_search()</summary>
+	
+~~~c
+	int hash_table_search(hash_table *const __restrict self,
+                      const char *const __restrict element,
+                      const size_t                 elem_size,
+                      int *const __restrict        in_table_pos,
+                      int *const __restrict        in_stack_pos)
+{
+        alignas(32) char temp[MAX_WORD_SIZE] = {};
+
+        hash_t elem_index              = MurmurHash(element, elem_size) % SIZE;
+        stack_node* current_stack_elem = DATA(elem_index).elements;
+        
+        int size = DATA(elem_index).size;
+        strncpy(temp, element, elem_size);
+
+        __m256i to_cmp = _mm256_load_si256((__m256i*)temp);
+        
+        for (int iter_count = 0; iter_count < size; ++iter_count) {
+                
+                __m256i mask        = _mm256_cmpeq_epi8(to_cmp, STACK_DATA(iter_count));
+                unsigned int i_mask = (unsigned int)_mm256_movemask_epi8(mask);
+                if (i_mask == 0xFFFFFFFF) {
+                        if (in_table_pos && in_stack_pos) {
+                                *in_table_pos = elem_index;
+                                *in_stack_pos = iter_count;
+                        }
+
+                        return 1;
+                }
+
+        }
+        
+
+        return 0;
+}
+
+~~~
+</details>
+</br>
 
 The testing function is *unit_test_search()*. (See [About testing](#about_test))
 
