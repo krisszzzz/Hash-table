@@ -649,6 +649,7 @@ See *fast_hash()* below:
 
 As you can see, the hash function has become about 10.5 times faster. Pretty good.
 You can also take a look at the word distribution graphs for crc32. It is also look pretty good.
+	
 ![MurmurHash](pictures/crc32.png)
 
 #### AVX2 searching optimizations <a name="AVX2"></a>
