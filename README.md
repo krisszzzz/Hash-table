@@ -333,6 +333,15 @@ As you can see this hash function is much more uniform than *hash_ascii_sum*.
 Of all the given hash functions, only this MurmurHash can be called good. However, keep in mind that a properly sized hash table can make bad hash functions relatively good.
 
 ## Optimizations <a name="opt"></a>
+First, let's look at the execution time of functions in the absence of optimizations. The testing function will be carried out below. Note that I assume that the hash table will be used more often for element lookup purposes. Note: I search everywhere the word "7lenstr". This word is not in hash table, but it is to test searching by this word. Notice that not optimized version, version with AVX2 depends on lenght of searched string, but version with inlined assembler is not. About this optimizations you will see below. Everywhere the size of hash table is set to 2048.  
+
+The testing function is *unit_test_search()*. (See [About testing](#about_test))  
+
+**Hash table searching testing, not optimized, iteration count 500000000, searched word ="7lenstr"**  
+![No_opt_initial](pictures/no_opt_initial.png)
+
+As you can see it is good idea to start optimizing function *hash_table_search()* and after that *MurmurHash()*  
+
 ### About testing <a name="about_test"></a>
 This time I still use the books "The Lord of the Rings" to see how fast and what functions work.
 Everywhere I used hash table with size 2048.
@@ -390,77 +399,9 @@ gcc -D NDEBUG -Ofast -mavx2 -march=native -ansi -std=gnu++2a -fcheck-new
 ~~~
 </details>	
 
-
 ### Used functions for testing <a name="used_functions"></a>
 List of functions that will be used to test the hash table.  
 Not all functions are collected here, but I will talk about all of them in the appropriate section.  
-
-*Functions to test hash functions*
-
-<details>
-	<summary>test_hash_function()</summary>
-	
-~~~c
-inline int test_hash_function(const char* const buffer,
-                              const int         size,
-                              const int         iter_count)
-{
-        
-        int offset      = 0;
-        hash_t hash_res = iter_count;
-
-                        
-        while(offset < size) {
-                hash_res += MurmurHash(&buffer[offset], MAX_WORD_SIZE);  
-				// Used to store hash result, adding to turn off
-                // unwanted optimization from compiler
-				
-				// Note that for fast_hash function code will look like this:
-				// hash_res += fast_hash(&buffer[offset], MAX_WORD_SIZE);
-				
-                offset += MAX_WORD_SIZE;
-        }
-
-        return hash_res; // return temp just because it can be optimized and hash don't will be calculated 
-
-}
-
-~~~
-	
-</details>
-
-<details>
-	<summary>unit_test_hash_function()</summary>
-	
-~~~c
-
-inline void unit_test_hash_function(const char* const file_name,
-                                    const int         max_iter_count)
-{
-
-        hash_t result = 0;
-        int size = 0;
-        char* buffer = load_file("Example.txt", &size);
-
-        if (buffer == nullptr) {
-                PrettyPrint("File loading error\n");
-                return; 
-        }
-
-        for (int iter_count = 0; iter_count < max_iter_count; ++iter_count) {
-                result = test_hash_function(buffer, size, iter_count);
-        }
- 
-
-        printf("%d\n", result);
-        // Used to avoiding unwanted compiler optimizations
-        // (since the Ofast flag is set, it may well not consider the value of the result variable at all)
-
-}
-~~~
-		
-</details>
-</br>
 
 This is functions used to fill hash table with words.
 
@@ -609,48 +550,8 @@ int unit_test_search(hash_table* const table, const char* const file_name, const
 <br>
 
 Sometimes I will specify how many iterations will be carried out in a loop.
-Also the executable name is *stat*.
 
 ### List of optimizations <a name="list_of_opt"></a>
-#### Crc32 hash optimization <a name="crc32"></a>
-Let's start. The first thing I did was rewrite my hash function. Together with *MurmurHash()* I use a function from intel for 
-faster hashing. Here is the code for the hash function. It uses *\_mm\_crc32\_u64* intel function. You can see comparison between *MurmurHash()* and *fast\_hash()*. *Note*: MurmurHash and fast\_hash has 
-following gcc *\_\_attributes\_\_*: *hot*, *pure*, *always\_inline*.  
-See *Murmurhash()* code [here](#Murmur).  
-See *fast_hash()* below:
-<details>
-	<summary>fast_hash()</summary>
-	
-~~~c
-	inline hash_t fast_hash(const void* data, const size_t size)
-{
-        u_int64_t crc     = 0xDED; // Random value
-        u_int64_t* i_data = (u_int64_t*)data;
-        
-        return  _mm_crc32_u64(crc, i_data[0]) |  (_mm_crc32_u64(crc, i_data[1]) ^
-                                                  _mm_crc32_u64(crc, i_data[2]))
-                && _mm_crc32_u64(crc, i_data[3]);
-
-}
-~~~
-	
-</details>
-</br>	
-	
-
-*MurmurHash with 1000000 iterations count in unit_test_hash_function. Used text The Lord of the Rings*
-
-![Murmurhash](pictures/MurmurHashTime.png)
-
-
-*fast_hash with 1000000 iterations count in unit_test_hash_function. Used text The Lord of the Rings*
-	
-![fast_hash](pictures/fast_hash_time.png)
-
-As you can see, the hash function has become about 10.5 times faster. Pretty good.
-You can also take a look at the word distribution graphs for crc32. It is also look pretty good.
-	
-![MurmurHash](pictures/crc32.png)
 
 #### AVX2 searching optimizations <a name="AVX2"></a>
 
@@ -745,16 +646,348 @@ This is AVX2 version of searching:
 
 The testing function is *unit_test_search()*. (See [About testing](#about_test))
 
-*No optimizitions, MurmurHash(), 10000000 iterations of searching:*
+**Hash table searching testing, not optimized, iteration count 500000000, searched word ="7lenstr"**  
+![no_opt_time](pictures/no_opt_search_time.png)
+
+**Hash table searching testing, AVX2 optimization, iteration count 500000000, searched word ="7lenstr"**  
+![avx2_opt_time](pictures/avx2_opt_time.png)
+
+The searching became about 1.6 faster.
+
+
+### Inline assembler optimization
+I rewrited the hash function using inline assembler provided by gcc. I use a jump table to optimize the hash function. 
+Note that in order to use the jump table, I had to declare the labels outside of the assembler injection (this is done using the LABEL macro), since assembler injections do not allow declaring data with the -pie compiler option. To keep the code independent of position, I declared the jump table as a static variable. Unfortunately, the inline version of this function cannot be used in this case. If you know a better way to do this, please let the author know.  
+Full code of function:  
+
+<details>
+	<summary>hash_table_search()</summary>
 	
-![No_opt](pictures/searching_time_no_opt.png)
+~~~c
 
-*Optimized, MurmurHash(), 10000000 iterations of searching:*
+#define LABEL(label_name)                              \
+        extern void label_name() asm(#label_name);
+// Find the used in inline assembler code labels
+LABEL(equal_1);
+LABEL(equal_2);
+LABEL(equal_3);
+LABEL(equal_4);
+LABEL(equal_5);
+LABEL(equal_6);
+LABEL(equal_7);
+LABEL(equal_8);
+LABEL(more_8);
+
+
+hash_t fast_hash_function(const char* const __restrict data, const int size)
+{
+                // Jmp table depend on size ==
+        static u_int64_t jmp_table[32] = {       
+                (u_int64_t)equal_1, // == 1
+                (u_int64_t)equal_2, // == 2
+                (u_int64_t)equal_3, // == 3
+                (u_int64_t)equal_3, // == 4
+                (u_int64_t)equal_4, // == 5
+                (u_int64_t)equal_5, // == 6 
+                (u_int64_t)equal_6, // == 7
+                (u_int64_t)equal_7, // == 8
+                (u_int64_t)equal_8, // == 9
+                (u_int64_t)more_8,  // == 10
+                (u_int64_t)more_8,  // == 11
+                (u_int64_t)more_8,  // == 12
+                (u_int64_t)more_8,  // == 13
+                (u_int64_t)more_8,  // == 14
+                (u_int64_t)more_8,  // == 15
+                (u_int64_t)more_8,  // == 16
+                (u_int64_t)more_8,  // == 17
+                (u_int64_t)more_8,  // == 18
+                (u_int64_t)more_8,  // == 19
+                (u_int64_t)more_8,  // == 20
+                (u_int64_t)more_8,  // == 21
+                (u_int64_t)more_8,  // == 22
+                (u_int64_t)more_8,  // == 23
+                (u_int64_t)more_8,  // == 24
+                (u_int64_t)more_8,  // == 25
+                (u_int64_t)more_8,  // == 26
+                (u_int64_t)more_8,  // == 27
+                (u_int64_t)more_8,  // == 28
+                (u_int64_t)more_8,  // == 29
+                (u_int64_t)more_8,  // == 30
+                (u_int64_t)more_8,  // == 31
+                (u_int64_t)more_8,  // == 32
+       };
+        
+        u_int64_t hash = 0;
+        
+        asm (
+            "push %%r9\n\t"
+            "push %%r10\n\t"
+            "push %%r11\n\t"
+            "push %%rsi\n\t"
+            "push %%rdi\n\t"
+            "xor %%r11, %%r11\n\t"
+            "xor %%r10, %%r10\n\t"
+            "lea %0, %%rax\n\t"
+            "jmp *(%%rax, %%rsi, 8)\n\t"
+            "more_8:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "crc32 %%r9d, %%r10d\n\t"
+            "add %%r10, %%r11\n\t"
+            "sub $0x8, %%rdi\n\t"
+            "sub $0x8, %%rsi\n\t"
+            "jmp *(%%rax,%%rsi, 8)\n\t"
+            
+            "equal_8:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "crc32 %%r9d, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_7:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "mov 0x4(%%rdi), %%ax\n\t"
+            "xor %%r9d, %%eax\n\t"
+            "mov 0x6(%%rdi), %%r9b\n\t"
+			"xor %%r9b, %%al\n\t"
+            "crc32 %%eax, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_6:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "mov 0x4(%%rdi), %%r10d\n\t"
+            "crc32 %%r9d, %%r10w\n\t"
+            "jmp adding\n\t"
+            "equal_5:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "mov 0x4(%%rdi), %%al\n\t"
+            "xor %%r9d, %%eax\n\t"
+            "crc32 %%eax, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_4:\n\t"
+            "mov (%%rdi), %%r9d\n\t"
+            "crc32 %%r9d, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_3:\n\t"
+            "mov (%%rdi), %%r9w\n\t"
+            "mov 0x2(%%rdi), %%r10b\n\t"
+            "xor %%r10d, %%r9d\n\t"
+            "crc32 %%r9w, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_2:\n\t"
+            "mov (%%rdi), %%r9w\n\t"
+            "crc32 %%r9w, %%r10d\n\t"
+            "jmp adding\n\t"
+            "equal_1:\n\t"
+            "mov (%%rdi), %%r9b\n\t"
+            "crc32 %%r9b, %%r10d\n\t"
+            
+            "adding:\n\t"
+            "add %%r10, %%r11\n\t"
+            "and $0x7ff, %%r11\n\t"
+            "mov %%r11, %1\n\t"
+            "pop %%rdi\n\t"
+            "pop %%rsi\n\t"
+            "pop %%r11\n\t"
+            "pop %%r10\n\t"
+            "pop %%r9\n\t"
+            :"=m"(jmp_table)
+            :"r"(hash),
+             "r"(data),
+             "r"(size)
+             );
+
+        return hash;
+ 
+}
+
+~~~
+
+</details>
+</br>
+
+The assembler code in intel syntax:  
+<details>
+
+<summary>Intel syntax assembler</summary>
+
+~~~assembler
+
+push rdx
+push r9
+push r10
+push r11
+push rsi
+push rdi
+xor r11, r11
+xor r10, r10
+mov rax jmp_table
+jmp [rax + rsi*8]
+more_8:
+mov r9d, [rdi]
+crc32 r10d, r9d
+add r11, r10
+sub rdi, 8
+sub rsi, 8
+jmp [rax + rsi*8]
+
+equal_8:
+mov r9d, [rdi]
+crc32 r10d, r9d
+jmp adding
+
+equal_7:
+mov r9, [rdi]
+mov ax, [rdi + 4]
+xor eax, r9d
+mov r9b, [rdi + 6]
+xor r9b, al
+crc32 r10d, eax
+jmp adding
+
+equal_6:
+mov r9d, [rdi]
+mov r10w, [rdi+4]
+crc32 r10d, r9d
+jmp adding
+
+equal_5:
+mov r9d, [rdi]
+mov r10b, [rdi+4]
+crc32 r10d, r9d
+jmp adding
+
+equal_4:
+mov r9d, [rdi]
+crc32 r10d, r9d
+jmp adding
+
+equal_3:
+mov r9w, [rdi]
+mov r10b, [rdi+2]
+xor r9d, r10d
+crc32 r10d, r9w
+jmp adding
+
+equal_2:
+mov r9w, [rdi]
+crc32 r10d, r9w
+jmp adding
+
+equal_1:
+mov r9b, [rdi]
+crc32 r10d, r9b
+
+adding:
+add r11, r10
+and r11, 0x7ff ; Division to 2048
+mov [hash], r11
+pop rdi
+pop rsi
+pop r11
+pop r10
+pop r9
+
+~~~
+
+</details>
+</br>
+
+**Hash table searching testing, AVX2 optimization, iteration count 500000000, searched word ="7lenstr"**  
+![avx2_opt_time](pictures/avx2_opt_time.png)
+
+**Hash table searching testing, AVX2 + inline assembler optimization, iteration count 500000000, searched word ="7lenstr"**  
+![inline_asm_opt_time](pictures/inline_asm_opt_time.png)
+
+The searching time is 1.2 times faster.
+
+### Function rewriting to assembler
+The last optimization is to use assembler and rewrite the function and statically link it to the project. I rewrite the avx version of hash table searching. The code look like this.  
+
+<details>
+	<summary>Intel syntax assembler code</summary>
 	
-![Opt](pictures/seacrh_optimized_time.png)
+~~~
+push   rbp
+mov    rbp,rsp
+push   r15
+push   r14
+push   r13
+push   r12
+push   rbx
+and    rsp,0xffffffffffffffe0
+sub    rsp,0x1000
+or     QWORD PTR [rsp],0x0
+sub    rsp,0x60
+or     QWORD PTR [rsp],0x0
+add    rsp,0x1020
+vpxor  xmm0,xmm0,xmm0
+mov    r9,rdi
+mov    rdi,rsi
+mov    esi,edx
+mov    QWORD PTR [rsp+0x38],rax
+xor    eax,eax
+vmovdqa XMMWORD PTR [rsp],xmm0
+vmovdqa XMMWORD PTR [rsp+0x10],xmm0
+call   fast_hash_function 
+mov    r12,rax
+shl    rax,0x5
+add    rax,QWORD PTR [r9+0x8]
+mov    rbx,QWORD PTR [rax]
+mov    r15d,DWORD PTR [rax+0xc]
+mov    rax,rsp
+mov    rsi,rdi
+movsxd rdx,edx
+mov    rdi,rax
+mov    r13,rcx
+mov    r14,r8
+call   strncpy 
+vmovdqa ymm1,YMMWORD PTR [rsp]
+test   r15d,r15d
+jle    
+mov    rax,rbx
+xor    edx,edx
+jmp    1573 
+nop    DWORD PTR [rax+rax*1+0x0]
+inc    edx
+add    rax,0x20
+cmp    r15d,edx
+je     15a0
+vpcmpeqb ymm0,ymm1,YMMWORD PTR [rax]
+vpmovmskb ecx,ymm0
+cmp    ecx,0xffffffff
+jne    1568
+test   r13,r13
+je     1591
+test   r14,r14
+je     1591
+mov    DWORD PTR [r13+0x0],r12d
+mov    DWORD PTR [r14],edx
+mov    eax,0x1
+jmp    15a2
+xor    eax,eax
+mov    rdx,QWORD PTR [rsp+0x38]
+sub    rdx,QWORD PTR fs:0x28
+jne    15c4
+vzeroupper 
+lea    rsp,[rbp-0x28]
+pop    rbx
+pop    r12
+pop    r13
+pop    r14
+pop    r15
+pop    rbp
+ret    
+
+~~~
+
+</details>
+</br>
 
 
-So the searching became 2 times faster. It also good result.
+**Hash table searching testing, AVX2 + inline assembler optimization, iteration count 500000000, searched word ="7lenstr"**  
+![inline_asm_opt_time](pictures/inline_asm_opt_time.png)
+
+**Hash table searching testing, AVX2 + inline assembler + static assembler optimization, iteration count 500000000, searched wrod="7lenstr"**
+![asm_opt_time](pictures/asm_time.png)
+
+As you can say it add nothing or even do worse in performance case. The reason mostly because the compiler can not, for example, inline this code. For compiler this code harder to optimize, so it can slow the program. I decided to show this optimization for study purposes only. 
 
 ### Conclusion <a name="opt_results"></a>
-Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2.5 times, however, in some cases, the increase is absolutely not significant.
+Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2 times.
