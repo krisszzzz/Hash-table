@@ -951,4 +951,4 @@ ret
 Как вы видите с помощью оптимизаций удалось добиться ускорения в 2 раза.  
 Коэффициент ускорения, предложенный [ded32](https://github.com/ded32):  
 
-<img src="https://render.githubusercontent.com/render/math?math=\xi = \frac{\text{performance boost}}{\text{assembly lines}}\cdot{1000} \approx \frac{2}{155}\cdot 1000 \approx 12.9">
+<img src="https://render.githubusercontent.com/render/math?math=\xi = \frac{\text{ускорение}}{\text{число строк на ассемблере}}\cdot{1000} \approx \frac{2}{155}\cdot 1000 \approx 12.9">
