@@ -253,25 +253,25 @@ inline hash_t MurmurHash(const void* key, size_t data_size)
 
 В большинстве случаев я использал 256 элементов для хеш-таблицы.  
 
-**1. hash_ret_1**
+**1. hash_ret_1**  
 
 ![hash_ret_1](pictures/hash_ret_1.png)
 
 Очевидный пример для демонстрации.  
 Пик коллизии находится в 1.  
 
-**2. hash_first_char**
+**2. hash_first_char**  
 Также довольно очевидный пример плохой хеш-функции.  
 
 ![hash_first_char](pictures/hash_first_char.png)
 
-**3. hash_len**
+**3. hash_len**  
 Заметим, что пик достигается в точке 7 (горизонтальная ось). Эта свазяна с тем, что средняя длина строк в английском языке составляет где-то 6-7 символов. 
 
 ![hash_len](pictures/hash_len.png)
 
 	
-**4. hash_ascii_sum**
+**4. hash_ascii_sum**  
 Хорошо выглядящая хеш-функции, однако тут не правильно подобран размер хеш-таблицы. Заметим, что данная хеш-функции ограниченна суммой ASCII-кодов символов.  
 Размер хеш-таблицы 256:  
 ![hash_ascii_sum](pictures/hash_ascii_sum.png)
@@ -280,12 +280,12 @@ inline hash_t MurmurHash(const void* key, size_t data_size)
 ![hash_ascii_sum_5000](pictures/hash_ascii_sum_5000.png)
 
 Как вы видите здесь возникает значительные проблемы с хеш-функцией и коллизиями.  
-**5. hash_ded32**
+**5. hash_ded32**  
 Функция, предложенное моим учителем по информатике.  
 
 ![hash_ded32](pictures/hash_ded32.png)
 
-**6. MurmurHash**
+**6. MurmurHash**  
 Функция, которая в дальнейшем будет использоваться в хеш-таблице по умолчанию.  
 При размере 256:  
 ![MurmurHash](pictures/MurmurHash.png)
