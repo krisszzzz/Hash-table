@@ -1,83 +1,68 @@
 
-# Table of Contents
-* [Introduction](#intro)
-  * [What is this README about?](#about_readme)
-  * [Why hash table?](#why_hash_table)
-* [Build](#build)
-* [Usage and documentation](#usage_n_doc)
-* [Hash functions collisions test](#hash_funct)
-  * [About hash functions](#about_hash_funct)
-  * [Tested hash functions](#tested_funct)
-  * [Results](#hash_results)
-	* [Charts](#charts)
-	* [Conclusion from the test](#hash_conclusion)
-* [Optimizations](#opt)
-  * [About testing](#about_test)
-  * [Used functions for testing](#used_functions)
-  * [List of optimizations](#list_of_opt)
-    * [crc32 hash optimization](#crc32)
-	* [AVX2 searching optimizations](#AVX2)
-  * [Conclusion](#opt_results)
+# Оглавление
+* [Введение](#intro)
+  * [О чем это README?](#about_readme)
+  * [Почему хеш-таблица?](#why_hash_table)
+* [Сборка](#build)
+* [Использование](#usage_n_doc)
+* [Проверка хеш-функции на коллизии](#hash_funct)
+  * [О хеш-функциях](#about_hash_funct)
+  * [Используемые хеш-функции](#tested_funct)
+  * [Результаты](#hash_results)
+	* [Графики](#charts)
+	* [Вывод](#hash_conclusion)
+* [Оптимизации](#opt)
+  * [О тестировании](#about_test)
+  * [Функции, используемые для тестов](#used_functions)
+  * [Список Оптимизаций](#list_of_opt)    
+    * [Оптимизация с помощью AVX2](#AVX2)
+  * [Вывод](#opt_results)
 
 
-## Introduction <a name="intro"></a>
+## Введение <a name="intro"></a>
 
-### What is this README about? <a name="about_readme"></a>
-This README contains information about the popular data structure, the hash table.  
-The hash table will be used as an example of how to optimize the code (see [List of optimizations](#list_of_opt)),  
-as well as to explore some hash functions (see [Tested hash functions](#tested_funct))  
+### О чем это README? <a name="about_readme"></a>
+Это README содержит информации о популярной структуре данных, хеш-таблице.  
+Хеш-таблица будет использована как хороший пример, как можно оптимизировать программую (см. [Список оптимизаций](#list_of_opt)),  
+а также для исследования хеш-функции (see [Tested hash functions](#tested_funct))  
 
-If you are only interested in **building** the project read [Build](#build).
-
-
-
-### Why hash table? <a name="why_hash_table"></a>
-* Because the hash table is very fast, quite convenient and simple.  
-This data structure is often used in many programs. The basic operations on that data i.e. the insertion, deletion, and searching can be (if there are no collisions) performed in O(1) time.
-* Hash table is an good example of how writing optimal code can *speed up* a program.  
-Because of the simplicity of the hash table, and because of the frequency of calling hash table  
-functions (if you don't call hash table functions often, it's not very clear why you use a hash table  
-at all), in the program appear the so-called *hotspots* - places where the program spends the most time on execution. (see [About optimizations](#about_opt))  
-
-* Hash table can be used to check hash function collisions (See [Hash functions collision test](#hash_funct))
-
-The biggest problem (which is solved in various fairly simple ways) hash tables in the presence of collisions. 
-I used the chain method to deal with collisions. In the original, it uses a doubly linked list, however, since I
-didn't start optimizing everything in a very smart way, I decided that the stack would be a faster solution. Now
-I'm almost sure that this does not affect performance. In general, this does not greatly affect the hash table
-itself, however, there is simply no function for deleting an element in it, just because I used a stack. Maybe
-in the future I will fix it
+Если вас интересует только сборка см. [Сборка](#build).
 
 
 
-[See the wiki for more details](https://en.wikipedia.org/wiki/Hash_table)
+### Почему хеш-таблица? <a name="why_hash_table"></a>
+* Потому что это быстро, эффективно и просто.  
+Эта структура очень часто используется в разных программах. Основная причина, в том что вставка, добавление и удаление может быть воспроизвено за время О(1).
+* Хеш-таблица это хороший пример для оптимизации программы.  
 
-## Build <a name="build"></a> 
+* Хеш-таблица может быть использована для исследования хеш-функции (см [Проверка хеш-функции на коллизии](#hash_funct))
+
+
+## Сборка <a name="build"></a> 
 
 ~~~ 
 git clone https://github.com/krisszzzz/Hash-table
 ~~~
 
-After to that go to the git directory.  
-Make build directory.  
+Зайдите в склонированный репозиторий.    
 ~~~
 mkdir build
 cd build
 ~~~
 
-Use cmake to build the project.  
-There are 2 build options available: without optimizations and with.  
-To build a project with optimizations set cmake variable HASH_TABLE_OPTIMIZED on:
+Соберите проект с помощью cmake.  
+Доступны 2 типа сборок: с оптимизациями или без.  
+Чтобы собрать с оптизациями:
 ~~~
 cmake -DHASH_TABLE_OPTIMIZED=ON ..
 ~~~
-To turn off optimizations:
+Выключить оптимизации:
 ~~~
 cmake -DHASH_TABLE_OPTIMIZED=OFF ..
 ~~~
 
-Cmake will create a static library *libhash_table.a*.  
-Don't forget to include header, located in *include/hash_table.h* in your sources, specifying with a macro what type of library (with or without optimizations) you have built.
+cmake создаст статическую библиотеку *libhash_table.a*.  
+Не забудьте включить хедер, находящийся в *include/hash_table.h* в склонированном репизотории. Укажите макрос HASH_TABLE_OPTIMIZED, если вы собирали сборку с оптизациями.
 ~~~c
 #define HASH_TABLE_OPTIMIZED  
 #include "/path/to/header/hash_table.h" 
@@ -88,44 +73,31 @@ Don't forget to include header, located in *include/hash_table.h* in your source
     #define HASH_TABLE_UNOPTIMIZED
 */
 
-// your source code
+// Ваш исходник
 
 ~~~
-After that use gcc (or any compiler) to link static library:
+После это слинкуйте все вместе с помощью gcc:
 ~~~
 gcc your_source_files /path/to/lib/libhash_table.a
 ~~~
 
-## Hash functions collisions test <a name="hash_funct"></a>
+## Тест хеш-функции на коллизии <a name="hash_funct"></a>
 
-### About hash functions <a name="about_hash_funct"></a>
-A hash table can be used to study hash function collisions.  
-Since the indexing of a hash table is based on finding the hash of the data, we can check the uniformity of the "population" of the data.  
+### О хеш-функциях <a name="about_hash_funct"></a>
+Хеш-таблицу можно использовать для исследования хеш-функций. Проверяя "заселенность" хеш-таблицы можно определить качество хеш-функции  
 
-For an ideal hash function, the following conditions are met:
-1. the hash function is deterministic, i.e. the same message results in the same hash value.
-2. the hash value is quickly calculated for any message.
-3. it is not possible to find a message that gives the given hash value.
-4. it is impossible to find two different messages with the same hash value.
-5. a small change in the message changes the hash so much that the new and old values ​​seem uncorrelated.
+### О тесте на коллизии <a name="about_hash_collision"></a>
+Коллизии - это совпадение хешей двух разных объектов.    
 
-
-
-### About collisions test <a name="about_hash_collision"></a>
-In simpler terms, the "population" of the data, that is, the number of elements that lie under one index in the hash table. As I said for ideal hash function it is not possible to find two different message with the smae hash value. But in real life every hash function has a so-called *collisions*.  
-
-Collisions are different objects with the same hash. To detect them, we will take a large text and put each word into a hash table. Thus, we can check how evenly the hash function "distributes" the data in the hash table. A good hash function should do this as uniformly as possible.  
-
-Visual illustration explaining what I was talking about:  
+Наглядная визуальная иллюстрация:  
 
 ![Collisions](pictures/Chaining2.png)
 
-I used Lord of the Rings books to test collisions. These books contain 469332 words (counted with C program).  
+Я использовать текст Толкиена "Властелении колец", содержащей примерно 462000 слов.  
 
-### Tested hash functions <a name="tested_funct"></a>
+### Тестируемые хеш-функции <a name="tested_funct"></a>
 
-I researched the following functions on collisions:  
-***Click to show code.***
+Я ииследовал следущие хеш-функции:  
 
 <details>
 	<summary>hash_ret_1()<a name="hash_ret_1"></a></summary>  
@@ -274,87 +246,72 @@ inline hash_t MurmurHash(const void* key, size_t data_size)
 </details>
 <br>
 
-See the [documentation](#doc) for more info.
 
 
-### Results <a name="hash_results"></a>
-#### Charts <a name="charts"></a>
+### Результаты <a name="hash_results"></a>
+#### Графики <a name="charts"></a>
 
-In most of cases I used the hash table with 256 elements. Note that I start element count from 0.  
+В большинстве случаев я использал 256 элементов для хеш-таблицы.  
 
 **1. hash_ret_1**
 
 ![hash_ret_1](pictures/hash_ret_1.png)
 
-Well, as you already understood, the result is quite obvious.  
-As you can see, the peak of collisions is reached at table elements with index 1.  
+Очевидный пример для демонстрации.  
+Пик коллизии находится в 1.  
 
 **2. hash_first_char**
 
 ![hash_first_char](pictures/hash_first_char.png)
 
-This result is also obvious. The peak is observed at index 115, which corresponds to the ascii character "s".  
-Note that at some points the number of collisions is 0. This is explained by the fact that there are letters on which words cannot be started at all
-
 **3. hash_len**
 
 ![hash_len](pictures/hash_len.png)
 
-The peak is observed at index 7. This is due to the fact that the average length of English words is about 5.2 letters. However, in fiction, this value is usually greater.
-
+	
 **4. hash_ascii_sum**
 
 ![hash_ascii_sum](pictures/hash_ascii_sum.png)
 
-Well it look pretty good, but this is because the size of the hash table is chosen correctly.  
-Here is what the same function looks like, but with a 5000 element hash table:  
-
 ![hash_ascii_sum_5000](pictures/hash_ascii_sum_5000.png)
 
-As you can see, the function hash behaves horribly if there are many elements in the hash table. 
 
 **5. hash_ded32**
 
 ![hash_ded32](pictures/hash_ded32.png)
 
-This hash function is bad, because its distribution already at 256 elements is extremely uneven.
-
 **6. MurmurHash**
 
 ![MurmurHash](pictures/MurmurHash.png)
 
-The collision distribution at 256 elements looks very similar to *hash_ascii_sum*, but notice how the hash function behaves if the hash table size is 5000:
 
 ![MurmurHash5000](pictures/MurmurHash5000.png)
 
-As you can see this hash function is much more uniform than *hash_ascii_sum*.  
 
-#### Сonclusion from the test <a name="hash_conclusion"></a>
-Of all the given hash functions, only this MurmurHash can be called good. However, keep in mind that a properly sized hash table can make bad hash functions relatively good.
+#### Вывод <a name="hash_conclusion"></a>
+Из всех использованных хеш-функции нормальной можно считать MurmurHash().
 
-## Optimizations <a name="opt"></a>
-First, let's look at the execution time of functions in the absence of optimizations. The testing function will be carried out below. Note that I assume that the hash table will be used more often for element lookup purposes. Note: I search everywhere the word "7lenstr". This word is not in hash table, but it is to test searching by this word. Notice that not optimized version, version with AVX2 depends on lenght of searched string, but version with inlined assembler is not. About this optimizations you will see below. Everywhere the size of hash table is set to 2048.  
+## Оптимизации <a name="opt"></a>
+Взглянем на время выполнения без оптимизаций. Я предполагаю, что хеш-таблица будет использована для поиска элемента в хеш-таблице, поэтому и оптимизировать я буду функцию поиска. Про тестирующие функции вы можете прочитать ниже. Везде использалась хеш-таблица размером 2048 элементов.  
 
-The testing function is *unit_test_search()*. (See [About testing](#about_test))  
+*unit_test_search()* - функция для тестирования поиска. (см [О тестировании](#about_test))  
 
-**Hash table searching testing, not optimized, iteration count 500000000, searched word ="7lenstr"**  
+**Не оптимизораванной поиск в хеш-таблице, число поисков (итераций) 500000000**  
 ![No_opt_initial](pictures/no_opt_initial.png)
 
-As you can see it is good idea to start optimizing function *hash_table_search()* and after that *MurmurHash()*  
+Начнем оптимизацировать функцию *hash_table_search()*, а затем *MurmurHash()*  
 
-### About testing <a name="about_test"></a>
-This time I still use the books "The Lord of the Rings" to see how fast and what functions work.
-Everywhere I used hash table with size 2048.
-Used instrument: [perf](https://perf.wiki.kernel.org/index.php/Main_Page).
+### О тестировании <a name="about_test"></a>
+Используемые инструменты: [perf](https://perf.wiki.kernel.org/index.php/Main_Page).
 
-Used gcc flags:
+Использованные флаги gcc:
 ~~~shell
 gcc -D NDEBUG -Ofast -mavx2 -march=native -ansi -std=gnu++2a -fcheck-new 
     -fsized-deallocation -fstack-check -fstrict-overflow
 ~~~
 
 <details>
-	<summary>info about my system</summary>
+	<summary>Информация о системе</summary>
 
 ~~~
 # hostname : archlinux
@@ -399,11 +356,10 @@ gcc -D NDEBUG -Ofast -mavx2 -march=native -ansi -std=gnu++2a -fcheck-new
 ~~~
 </details>	
 
-### Used functions for testing <a name="used_functions"></a>
-List of functions that will be used to test the hash table.  
-Not all functions are collected here, but I will talk about all of them in the appropriate section.  
+### Тестирующие функции <a name="used_functions"></a>
+Все функции, использованные для тестирования функции поиска.    
 
-This is functions used to fill hash table with words.
+Функции для заполнения хеш-таблицы.
 
 <details>
 	<summary>is_sign()</summary>
@@ -483,7 +439,7 @@ void skip_spaces_n_marks(char** string)
 </details>
 </br>
 
-Simple unit test for hash table searching speed
+Юнит-тест для функции поиска  
 
 <details>
 	<summary>unit_test_search()</summary>
@@ -549,16 +505,13 @@ int unit_test_search(hash_table* const table, const char* const file_name, const
 
 <br>
 
-Sometimes I will specify how many iterations will be carried out in a loop.
+### Список оптимизаций <a name="list_of_opt"></a>
 
-### List of optimizations <a name="list_of_opt"></a>
+#### Оптимизация с помощью AVX2 инструкций <a name="AVX2"></a>
 
-#### AVX2 searching optimizations <a name="AVX2"></a>
+Для ускорения функции поиска можно использовать AVX2-инструкции и intrinsic-функций, подключаемых из хедера "<immitrin.h>".
 
-It makes sense to change the comparison and search for elements. For this we will use AVX2 instructions. Also I used some gcc attributes (*\_\_attribute__()* like *hot*, *nonull*, see [gcc functions attributes](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html)).
-As before, I used Lords of The Rings text.
-
-So I have optimized the searching function. This is how unoptimized version look:
+Неоптимизированная версия функции поиска:
 <details>
 	<summary>hash_table_search()</summary>
 
@@ -600,7 +553,7 @@ int hash_table_search(hash_table* const self,        const char* const element,
 </br>
 
 
-This is AVX2 version of searching:
+Функции поиска с использованием AVX2-инструкций:
 <details>
 	<summary>hash_table_search()</summary>
 	
@@ -644,21 +597,20 @@ This is AVX2 version of searching:
 </details>
 </br>
 
-The testing function is *unit_test_search()*. (See [About testing](#about_test))
-
-**Hash table searching testing, not optimized, iteration count 500000000, searched word ="7lenstr"**  
+Результаты:  
+**Не оптимизированный поиска, число поисков (итераций) 500000000**  
 ![no_opt_time](pictures/no_opt_search_time.png)
 
-**Hash table searching testing, AVX2 optimization, iteration count 500000000, searched word ="7lenstr"**  
+**Оптимизированная с использованием AVX2-инструкций, число поисков (итераций) 500000000**  
 ![avx2_opt_time](pictures/avx2_opt_time.png)
 
-The searching became about 1.6 faster.
+Функция стала работать на 60% быстрее.
 
 
-### Inline assembler optimization
-I rewrited the hash function using inline assembler provided by gcc. I use a jump table to optimize the hash function. 
-Note that in order to use the jump table, I had to declare the labels outside of the assembler injection (this is done using the LABEL macro), since assembler injections do not allow declaring data with the -pie compiler option. To keep the code independent of position, I declared the jump table as a static variable. Unfortunately, the inline version of this function cannot be used in this case. If you know a better way to do this, please let the author know.  
-Full code of function:  
+### Вставка ассемблерного кода (inline assembler)
+Я переписал хеш-функции с помощью ассемблерной вставки. Я построил таблицу переход для ускорения хеширования.   
+Для создания такой таблицы я объявил эти метки в С коде, а затем поместил в статическую переменную. Это решение связано с тем, что в ассемблерной вставке нельзя объявлять данные так, чтобы код оставался position-independent (pie).  
+Код функции:  
 
 <details>
 	<summary>fast_hash_function()</summary>
@@ -802,7 +754,7 @@ hash_t fast_hash_function(const char* const __restrict data, const int size)
 </details>
 </br>
 
-The assembler code in intel syntax:  
+Код ассемблера на Intel синтаксисе:  
 <details>
 
 <summary>Intel syntax assembler</summary>
@@ -889,19 +841,19 @@ pop r9
 </details>
 </br>
 
-**Hash table searching testing, AVX2 optimization, iteration count 500000000, searched word ="7lenstr"**  
+**Функция поиска с AVX2-инструкциями, число поисков (итераций) 500000000**  
 ![avx2_opt_time](pictures/avx2_opt_time.png)
 
-**Hash table searching testing, AVX2 + inline assembler optimization, iteration count 500000000, searched word ="7lenstr"**  
+**Функция поиска с AVX2-инструкциями + ассемблерная вставка, число поисков (итераций) 500000000**  
 ![inline_asm_opt_time](pictures/inline_asm_opt_time.png)
 
-The searching time is 1.2 times faster.
+Ускорение составляет где-то 25%.
 
-### Function rewriting to assembler
-The last optimization is to use assembler and rewrite the function and statically link it to the project. I rewrite the avx version of hash table searching. The code look like this.  
+### Переписывание функции на ассемблере
+В последней оптимизации я полностью переписал функцию поиска на ассемблера и статически слинковал объектный файл с моим проектом.  
 
 <details>
-	<summary>Intel syntax assembler code</summary>
+	<summary>Ассемблерный код на Intel синтаксисе</summary>
 	
 ~~~
 hash_table_search_asm	
@@ -987,16 +939,16 @@ ret
 </br>
 
 
-**Hash table searching testing, AVX2 + inline assembler optimization, iteration count 500000000, searched word ="7lenstr"**  
+**Функция поиска с AVX2-инструкциями + ассемблерная вставка, число поисков (итераций) 500000000**    
 ![inline_asm_opt_time](pictures/inline_asm_opt_time.png)
 
-**Hash table searching testing, AVX2 + inline assembler + static assembler optimization, iteration count 500000000, searched wrod="7lenstr"**
+**Функция поиска с AVX2-инструкциями + ассемблерная вставка + переписанный на ассемблере функция поиска, число поисков (итераций) 500000000**
 ![asm_opt_time](pictures/asm_time.png)
 
-As you can say it add nothing or even do worse in performance case. The reason mostly because the compiler can not, for example, inline this code. For compiler this code harder to optimize, so it can slow the program. I decided to show this optimization for study purposes only. 
+Как вы видите, это не дало никакого эффекта. Скорее всего, причина в том, что компилятору сложнее оптизировать такой код. Я оставил эту оптимизацию в целях обучения. 
 
-### Conclusion <a name="opt_results"></a>
-Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2 times.  
-[ded32](https://github.com/ded32) performance coefficient:  
+### Вывод <a name="opt_results"></a>
+Как вы видите с помощью оптимизаций удалось добиться ускорения в 2 раза.  
+Коэффициент ускорения, предложенный [ded32](https://github.com/ded32):  
 
 <img src="https://render.githubusercontent.com/render/math?math=\xi = \frac{\text{performance boost}}{\text{assembly lines}}\cdot{1000} \approx \frac{2}{155}\cdot 1000 \approx 12.9">
