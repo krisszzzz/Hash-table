@@ -661,7 +661,7 @@ Note that in order to use the jump table, I had to declare the labels outside of
 Full code of function:  
 
 <details>
-	<summary>hash_table_search()</summary>
+	<summary>fast_hash_function()</summary>
 	
 ~~~c
 
