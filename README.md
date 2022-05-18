@@ -904,6 +904,7 @@ The last optimization is to use assembler and rewrite the function and staticall
 	<summary>Intel syntax assembler code</summary>
 	
 ~~~
+hash_table_search_asm	
 push   rbp
 mov    rbp,rsp
 push   r15
@@ -940,28 +941,33 @@ mov    r14,r8
 call   strncpy 
 vmovdqa ymm1,YMMWORD PTR [rsp]
 test   r15d,r15d
-jle    
+jle    Exit  
 mov    rax,rbx
 xor    edx,edx
-jmp    1573 
+jmp   .start_cmp 
 nop    DWORD PTR [rax+rax*1+0x0]
+.cycle:	
 inc    edx
 add    rax,0x20
 cmp    r15d,edx
-je     15a0
+je     Exit
+.start_cmp:
 vpcmpeqb ymm0,ymm1,YMMWORD PTR [rax]
 vpmovmskb ecx,ymm0
 cmp    ecx,0xffffffff
-jne    1568
+jne    .cycle
 test   r13,r13
-je     1591
+je     is_null
 test   r14,r14
-je     1591
+je     is_null
 mov    DWORD PTR [r13+0x0],r12d
 mov    DWORD PTR [r14],edx
+is_null:	
 mov    eax,0x1
-jmp    15a2
+jmp    .skip_xor
+.Exit:	
 xor    eax,eax
+.skip_xor:	
 mov    rdx,QWORD PTR [rsp+0x38]
 sub    rdx,QWORD PTR fs:0x28
 jne    15c4
