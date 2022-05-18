@@ -299,7 +299,7 @@ inline hash_t MurmurHash(const void* key, size_t data_size)
 **Не оптимизораванной поиск в хеш-таблице, число поисков (итераций) 500000000**  
 ![No_opt_initial](pictures/no_opt_initial.png)
 
-Начнем оптимизацировать функцию *hash_table_search()*, а затем *MurmurHash()*  
+Начнем оптимизировать функцию *hash_table_search()* - функция поиска в хеш-таблице, а затем *MurmurHash()* - функцию хеширования.  
 
 ### О тестировании <a name="about_test"></a>
 Используемые инструменты: [perf](https://perf.wiki.kernel.org/index.php/Main_Page).
