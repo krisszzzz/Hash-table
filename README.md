@@ -997,5 +997,6 @@ As you can say it add nothing or even do worse in performance case. The reason m
 
 ### Conclusion <a name="opt_results"></a>
 Thanks to optimization, it is possible to achieve acceleration, usually somewhere in 2 times.  
-[ded32](https://github.com/ded32) performance coefficient: 
+[ded32](https://github.com/ded32) performance coefficient:  
+
 <img src="https://render.githubusercontent.com/render/math?math=\xi = \frac{\text{performance boost}}{\text{assembly lines}}\cdot{1000} \approx \frac{2}{155}\cdot 1000 \approx 12,9">
